@@ -142,7 +142,8 @@
                 </div>
                 
                 <!-- Next Word Button -->
-                <div class="text-center mt-6">
+                <div class="text-center mt-6 flex justify-center items-center space-x-4">
+                    <button id="skip-word-btn" class="hidden btn-secondary text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg">Skip Word</button>
                     <button id="next-word-btn" class="hidden btn-primary text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg">Next Word</button>
                 </div>
 
@@ -192,6 +193,7 @@
             const playIcon = document.getElementById('play-icon');
             const pauseOverlay = document.getElementById('pause-overlay');
             const nextWordBtn = document.getElementById('next-word-btn');
+            const skipWordBtn = document.getElementById('skip-word-btn');
             const musicBtn = document.getElementById('music-btn');
             const musicOnIcon = document.getElementById('music-on-icon');
             const musicOffIcon = document.getElementById('music-off-icon');
@@ -231,6 +233,7 @@
             let usedWords = new Set();
             let currentInput = '';
             let isInputActive = false;
+            let isRoundStarted = false; // New state to track if the timer/audio has started for the current word
             let isMuted = false;
             let isPaused = false;
             let isMusicOn = false;
@@ -238,8 +241,6 @@
 
             // --- Sound Effects (Tone.js) ---
             const synth = new Tone.Synth().toDestination();
-            const tickSynth = new Tone.MembraneSynth().toDestination();
-            tickSynth.volume.value = -20;
 
             const playCorrectSound = () => {
                 if (isMuted) return;
@@ -251,11 +252,6 @@
             const playIncorrectSound = () => {
                 if (isMuted) return;
                 synth.triggerAttackRelease("A2", "8n");
-            };
-
-            const playTickSound = () => {
-                if (isMuted) return;
-                tickSynth.triggerAttackRelease("C2", "8n");
             };
 
             // --- Set MP3 Source ---
@@ -300,9 +296,7 @@
                     if (isPaused) return;
                     timeLeft--;
                     timerEl.textContent = timeLeft;
-                    if (timeLeft > 0) {
-                        playTickSound();
-                    }
+
                     if (timeLeft <= 5) {
                         timerEl.classList.add('status-incorrect');
                     }
@@ -317,10 +311,13 @@
                 currentInput = '';
                 letterContainer.innerHTML = '';
                 correctWordDisplay.classList.add('hidden');
-                isInputActive = true;
+                isInputActive = false; // Input is disabled until player clicks "Listen"
+                isRoundStarted = false; // Reset for the new word
                 feedbackEl.textContent = '\u00A0';
                 feedbackEl.classList.remove('status-correct', 'status-incorrect');
                 nextWordBtn.classList.add('hidden');
+                skipWordBtn.classList.add('hidden');
+                wpmEl.textContent = 0;
                 
                 currentWord = getNewWord();
                 wordLengthEl.textContent = `${currentWord.length} letters`;
@@ -332,11 +329,6 @@
                     letterBox.className = 'input-field letter-box flex items-center justify-center rounded-lg';
                     letterContainer.appendChild(letterBox);
                 }
-                
-                setTimeout(() => {
-                    speak(currentWord);
-                    startTimer();
-                }, 1000); // Increased delay to 1 second
             };
 
             const calculateWPM = (word) => {
@@ -367,6 +359,7 @@
                 correctWordDisplay.classList.add('status-correct');
                 
                 nextWordBtn.classList.remove('hidden');
+                skipWordBtn.classList.add('hidden');
                 nextWordBtn.focus();
             };
 
@@ -382,16 +375,24 @@
                 correctWordDisplay.classList.remove('hidden', 'status-correct');
                 correctWordDisplay.classList.add('status-incorrect');
 
-                // Show the correct spelling in the letter boxes
-                const letterBoxes = letterContainer.childNodes;
+                const letterBoxes = letterContainer.children; 
                 for(let i = 0; i < currentWord.length; i++) {
-                    letterBoxes[i].textContent = currentWord[i].toUpperCase();
-                    if (currentInput[i] !== currentWord[i]) {
-                         letterBoxes[i].classList.add('letter-incorrect');
+                    if (letterBoxes[i]) {
+                        // Display the correct letter
+                        letterBoxes[i].textContent = currentWord[i].toUpperCase();
+                        
+                        // Explicitly set the class name to avoid conflicts
+                        const baseClass = 'input-field letter-box flex items-center justify-center rounded-lg';
+                        if (currentInput.length > i && currentInput[i] === currentWord[i]) {
+                            letterBoxes[i].className = `${baseClass} letter-correct`;
+                        } else {
+                            letterBoxes[i].className = `${baseClass} letter-incorrect`;
+                        }
                     }
                 }
 
                 nextWordBtn.classList.remove('hidden');
+                skipWordBtn.classList.add('hidden');
                 nextWordBtn.focus();
             };
 
@@ -424,14 +425,14 @@
             basicDifficultyBtn.addEventListener('click', () => {
                 WORDS = BASIC_WORDS;
                 difficultyDisplay.textContent = 'Difficulty: Basic';
-                Tone.start(); 
+                Tone.start().catch(e => console.error("Tone.js failed to start:", e));
                 startGame();
             });
             
             wildDifficultyBtn.addEventListener('click', () => {
                 WORDS = WILD_WORDS;
                 difficultyDisplay.textContent = 'Difficulty: Bruh this is wild';
-                Tone.start(); 
+                Tone.start().catch(e => console.error("Tone.js failed to start:", e));
                 startGame();
             });
 
@@ -441,7 +442,22 @@
             });
 
             speakWordBtn.addEventListener('click', () => {
-                if (currentWord) speak(currentWord);
+                if (currentWord && !isPaused) {
+                    // If the round hasn't started, this click will start it.
+                    if (!isRoundStarted) {
+                        isRoundStarted = true;
+                        isInputActive = true;
+                        // A minimal delay to ensure the event loop is clear before speaking.
+                        setTimeout(() => {
+                           speak(currentWord);
+                           startTimer();
+                           skipWordBtn.classList.remove('hidden');
+                        }, 100);
+                    } else {
+                        // If round is already active, just repeat the word.
+                        speak(currentWord);
+                    }
+                }
             });
 
             const handleKeyPress = (e) => {
@@ -453,40 +469,49 @@
                 if (key.match(/^[a-z]$/i) && currentInput.length < currentWord.length) {
                     if (!typingStartTime) typingStartTime = performance.now();
                     
-                    const letterBoxes = letterContainer.childNodes;
+                    const letterBoxes = letterContainer.children; 
                     const box = letterBoxes[currentInput.length];
-                    box.textContent = key;
+                    if(box) {
+                        box.textContent = key;
                     
-                    if (key.toLowerCase() === currentWord[currentInput.length]) {
-                        box.classList.add('letter-correct');
-                        box.classList.remove('letter-incorrect');
-                    } else {
-                        box.classList.add('letter-incorrect');
-                        box.classList.remove('letter-correct');
+                        const baseClass = 'input-field letter-box flex items-center justify-center rounded-lg';
+                        if (key.toLowerCase() === currentWord[currentInput.length]) {
+                           box.className = `${baseClass} letter-correct`;
+                        } else {
+                           box.className = `${baseClass} letter-incorrect`;
+                        }
                     }
                     currentInput += key.toLowerCase();
                 }
                 // Handle backspace
                 else if (key === 'Backspace' && currentInput.length > 0) {
                     currentInput = currentInput.slice(0, -1);
-                    const letterBoxes = letterContainer.childNodes;
+                    const letterBoxes = letterContainer.children;
                     const box = letterBoxes[currentInput.length];
-                    box.textContent = '';
-                    box.classList.remove('letter-correct', 'letter-incorrect');
+                    if(box) {
+                        box.textContent = '';
+                        box.className = 'input-field letter-box flex items-center justify-center rounded-lg';
+                    }
                 }
                 // Handle submit
                 else if (key === 'Enter' && currentInput.length === currentWord.length) {
                     checkAnswer();
                 }
             };
-
+            
             document.addEventListener('keydown', handleKeyPress);
 
+            skipWordBtn.addEventListener('click', () => {
+                if(isInputActive && !isPaused) {
+                    handleIncorrectAnswer('Skipped!');
+                }
+            });
+            
             muteBtn.addEventListener('click', () => {
                 isMuted = !isMuted;
                 muteIcon.classList.toggle('hidden', !isMuted);
                 unmuteIcon.classList.toggle('hidden', isMuted);
-                backgroundMusic.muted = isMuted; // Mute/unmute the MP3 player
+                backgroundMusic.muted = isMuted;
                 if(isMuted) speechSynthesis.cancel();
             });
             
@@ -511,9 +536,11 @@
                 if (isPaused) {
                     isInputActive = false;
                     if(isMusicOn) backgroundMusic.pause();
+                    clearInterval(timer); // Stop timer interval when paused
                 } else {
-                    if (feedbackEl.textContent.trim() === '' || feedbackEl.classList.contains('status-correct')) {
+                    if (isRoundStarted) {
                          isInputActive = true;
+                         startTimer(); // Resume timer
                     }
                     if(isMusicOn) backgroundMusic.play().catch(e => console.error("Audio playback failed:", e));
                 }
@@ -538,4 +565,7 @@
     </script>
 </body>
 </html>
+
+
+
 
