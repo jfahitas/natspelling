@@ -205,19 +205,50 @@
             const WORD_TIME_LIMIT = 15; // seconds
             const ALL_WORDS = [
                 // Basic Words (7-14 letters)
-                "beautiful", "computer", "dragon", "elephant", "guitar", "holiday", "island", "jungle",
-                "kitchen", "library", "mountain", "notebook", "pencil", "question", "rainbow", "science", 
-                "together", "umbrella", "vacation", "wonderful", "xylophone", "yesterday", "amazing", "believe", 
-                "challenge", "discover", "fantastic", "generous", "history", "imagine", "journey", "knowledge", 
-                "language", "neighbor", "opportunity", "popular", "quality", "remember", "success", "technology", 
-                "universe", "victory", "weather", "celebrate", "different", "education", "favorite", "government", "important",
+                "beautiful", "computer", "dragon", "elephant", "guitar", "holiday", "island", "jungle", "kitchen", "library", "mountain", "notebook",
+                "pencil", "question", "rainbow", "science", "together", "umbrella", "vacation", "wonderful", "xylophone", "yesterday", "amazing",
+                "believe", "challenge", "discover", "fantastic", "generous", "history", "imagine", "journey", "knowledge", "language", "neighbor",
+                "opportunity", "popular", "quality", "remember", "success", "technology", "universe", "victory", "weather", "celebrate", "different",
+                "education", "favorite", "government", "important", "communication", "concentration", "construction", "conversation", "cooperation",
+                "decision", "decoration", "definition", "description", "destruction", "determination", "direction", "discussion", "imagination",
+                "information", "instruction", "invention", "invitation", "operation", "organization", "population", "preparation", "production",
+                "protection", "reaction", "relation", "repetition", "satisfaction", "selection", "situation", "translation", "transportation",
+                "variation", "abbreviation", "acceleration", "accommodation", "administration", "appreciation", "association", "civilization",
+                "clarification", "classification", "combination", "commendation", "complication", "confirmation", "consideration", "continuation",
+                "contribution", "demonstration", "discrimination", "distribution", "documentation", "examination", "explanation", "exploration",
+                "foundation", "generation", "graduation", "identification", "illustration", "implementation", "interpretation", "investigation",
+                "justification", "legislation", "manipulation", "modification", "motivation", "negotiation", "observation", "occupation",
+                "participation", "permission", "presentation", "preservation", "pronunciation", "publication", "qualification", "realization",
+                "recommendation", "registration", "representation", "reputation", "reservation", "resignation", "resolution", "restoration",
+                "specification", "stimulation", "supervision", "transformation",
                 // Wild Words (15+ letters)
-                "characteristically", "incomprehensibility", "interdisciplinary",
-                "microspectrophotometry", "psychophysiological", "deinstitutionalization",
-                "counterrevolutionaries", "compartmentalization", "incontrovertibility",
-                "disproportionateness", "environmentalists", "extraterritoriality",
-                "inconsequentialness", "overenthusiastically", "responsibilities", 
-                "telecommunications", "internationalization", "misunderstanding"
+                "characteristically", "incomprehensibility", "interdisciplinary", "microspectrophotometry", "psychophysiological",
+                "deinstitutionalization", "counterrevolutionaries", "compartmentalization", "incontrovertibility", "disproportionateness",
+                "environmentalists", "extraterritoriality", "inconsequentialness", "overenthusiastically", "responsibilities",
+                "telecommunications", "internationalization", "misunderstanding", "antidisestablishmentarianism", "floccinaucinihilipilification",
+                "pseudopseudohypoparathyroidism", "supercalifragilisticexpialidocious", "incomprehensibilities", "spectrophotofluorometrically",
+                "psychoneuroendocrinological", "radioimmunoelectrophoresis", "immunoelectrophoretically", "otorhinolaryngological",
+                "thyroparathyroidectomized", "psychopharmacologically", "intellectualization", "uninterruptibleness", "multidimensionality",
+                "individualistically", "institutionalization", "compartmentalizing", "conceptualization", "constitutionalize", "contextualization",
+                "conventionalizing", "decriminalization", "deindustrialization", "demilitarization", "democratization", "denationalization",
+                "departmentalizing", "differentiation", "diversification", "electrophysiological", "encephalographically", "gastrointestinal",
+                "heterogeneously", "histocompatibility", "hydrochlorofluorocarbon", "hypercholesterolemia", "hyperlipoproteinemia",
+                "hyperparathyroidism", "hypersensitivity", "immunohistochemically", "immunodeficiency", "immunosuppression", "inaccessibility",
+                "inappropriateness", "incomprehensible", "inconsiderateness", "indistinguishable", "industrialization", "institutionalized",
+                "intellectualism", "interconnectedness", "interdisciplinarity", "interdependence", "internationalism", "interrelatedness",
+                "microelectronics", "miniaturization", "multiculturalism", "multidisciplinary", "multifunctional", "multinational",
+                "multiprogramming", "neurotransmitter", "noncontradictory", "operationalization", "oversimplification", "parapsychological",
+                "photoconductivity", "photosensitivity", "polysaccharides", "professionalism", "proportionality", "psychoanalysis",
+                "psycholinguistics", "psychopathology", "psychophysiology", "psychotherapists", "rationalization", "redistribution",
+                "representation", "scientific-technical", "self-actualization", "self-determination", "self-realization", "semi-consciousness",
+                "socio-cultural", "socio-economic", "sociolinguistics", "standardization", "straightforwardness", "sub-categorization",
+                "subjectivization", "systematically", "telecommunication", "territorialization", "trans-continental", "traditionalistic",
+                "transcendentalism", "transdisciplinary", "unimaginatively", "universalization", "unprofessionally", "unsubstantiated",
+                "ventriloquism", "electroencephalogram", "counter-revolutionary", "decontextualization", "deinstitutionalize",
+                "disenfranchisement", "electro-mechanically", "institutionalizing", "inter-communication", "multi-jurisdictional",
+                "neuro-anatomical", "neuro-endocrinology", "paleo-anthropology", "para-professional", "psycho-acoustics", "radio-astronomical",
+                "re-conceptualization", "socio-biological", "thrombo-embolic", "trans-oceanic", "un-ambiguously", "un-ceremoniously",
+                "un-constitutional", "un-questionably", "pneumonoultramicroscopicsilicovolcanoconiosis"
             ];
 
             const BASIC_WORDS = ALL_WORDS.filter(w => w.length >= 7 && w.length < 15);
@@ -347,7 +378,7 @@
                 scoreEl.textContent = score;
                 isInputActive = false;
 
-                if (typingStartTime) {
+                if (typingStartTime && performance.now() > typingStartTime) {
                     wpmEl.textContent = calculateWPM(currentWord);
                 }
 
@@ -565,7 +596,4 @@
     </script>
 </body>
 </html>
-
-
-
 
