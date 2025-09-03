@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nat's Spelling Showcase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #1a202c; /* Dark blue-gray background */
+            color: #e2e8f0; /* Light gray text */
+        }
+        .game-card {
+            background-color: #2d3748; /* Slightly lighter card background */
+            border: 2px solid #4a5568;
+        }
+        .btn-primary {
+            background-color: #4299e1; /* Blue */
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #3182ce;
+        }
+        .btn-secondary {
+            background-color: #4a5568; /* Gray */
+            transition: background-color 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: #2d3748;
+        }
+        .input-field {
+            background-color: #1a202c;
+            border-color: #4a5568;
+            color: #e2e8f0;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+        }
+        .status-correct {
+            color: #48bb78; /* Green */
+        }
+        .status-incorrect {
+            color: #f56565; /* Red */
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="game-container" class="w-full max-w-2xl mx-auto">
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="text-center">
+            <h1 class="text-5xl md:text-6xl font-bold text-yellow-400 mb-4">Nat's Spelling Showcase</h1>
+            <p class="text-xl text-slate-300 mb-8">Ready to show off your spelling skills?</p>
+            <button id="start-game-btn" class="btn-primary text-white font-bold py-3 px-8 rounded-full text-2xl shadow-lg">Start Game</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="hidden">
+            <div class="game-card rounded-2xl p-6 md:p-8 shadow-2xl relative">
+                <h1 class="text-3xl font-bold text-center text-yellow-400 mb-6">Nat's Spelling Showcase</h1>
+                <!-- Top HUD -->
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center space-x-4">
+                        <button id="pause-btn" class="text-white hover:text-yellow-400 transition" title="Pause/Resume">
+                            <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                            <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        </button>
+                        <button id="mute-btn" class="text-white hover:text-yellow-400 transition" title="Mute/Unmute Sounds">
+                             <svg id="unmute-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                             <svg id="mute-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                        </button>
+                        <button id="music-btn" class="text-white hover:text-yellow-400 transition" title="Toggle Music">
+                            <svg id="music-on-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                            <svg id="music-off-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                        </button>
+                        <div class="flex items-center space-x-2">
+                             <button id="volume-down-btn" class="text-white hover:text-yellow-400 transition" title="Volume Down">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="15" y1="12" x2="21" y2="12"></line></svg>
+                             </button>
+                             <button id="volume-up-btn" class="text-white hover:text-yellow-400 transition" title="Volume Up">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="18" y1="9" x2="18" y2="15"></line><line x1="21" y1="12" x2="15" y2="12"></line></svg>
+                             </button>
+                        </div>
+                    </div>
+                    <div class="text-lg">Score: <span id="score" class="font-bold text-yellow-400">0</span></div>
+                    <div class="text-lg">WPM: <span id="wpm" class="font-bold text-blue-400">0</span></div>
+                    <div id="timer" class="text-2xl font-bold bg-slate-700 text-white rounded-full w-16 h-16 flex items-center justify-center border-4 border-slate-500">15</div>
+                </div>
+
+                <!-- Word Prompt Area -->
+                <div class="text-center my-8">
+                     <p class="text-slate-400 mb-4">Click the button to hear the word</p>
+                    <button id="speak-word-btn" class="btn-secondary text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg flex items-center justify-center mx-auto">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                        Listen to the Word
+                    </button>
+                    <div id="feedback" class="mt-4 text-2xl font-bold h-8">&nbsp;</div>
+                </div>
+                
+                <!-- Input Area -->
+                <div class="relative">
+                    <input type="text" id="spell-input" class="input-field w-full text-3xl text-center p-4 rounded-lg" placeholder="Type the word..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    <div id="word-length" class="absolute top-full right-0 text-sm text-slate-400 mt-2"></div>
+                </div>
+                
+                <!-- Next Word Button -->
+                <div class="text-center mt-6">
+                    <button id="next-word-btn" class="hidden btn-primary text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg">Next Word</button>
+                </div>
+
+                <!-- Pause Overlay -->
+                <div id="pause-overlay" class="hidden absolute inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center rounded-2xl">
+                    <h2 class="text-4xl font-bold text-yellow-400">Paused</h2>
+                    <p class="text-slate-300 mt-2">Click the play button to resume.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- End Screen -->
+        <div id="end-screen" class="hidden text-center">
+            <h2 class="text-4xl font-bold mb-2">Game Over!</h2>
+            <p class="text-2xl text-yellow-400 mb-6">Final Score: <span id="final-score" class="font-bold">0</span></p>
+            <button id="play-again-btn" class="btn-primary text-white font-bold py-3 px-8 rounded-full text-2xl shadow-lg">Play Again</button>
+        </div>
+    </div>
+    
+    <!-- Audio element for MP3 background music -->
+    <audio id="background-music" loop></audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const startScreen = document.getElementById('start-screen');
+            const gameScreen = document.getElementById('game-screen');
+            const endScreen = document.getElementById('end-screen');
+            const startGameBtn = document.getElementById('start-game-btn');
+            const playAgainBtn = document.getElementById('play-again-btn');
+            const speakWordBtn = document.getElementById('speak-word-btn');
+            const spellInput = document.getElementById('spell-input');
+            const scoreEl = document.getElementById('score');
+            const wpmEl = document.getElementById('wpm');
+            const timerEl = document.getElementById('timer');
+            const feedbackEl = document.getElementById('feedback');
+            const finalScoreEl = document.getElementById('final-score');
+            const wordLengthEl = document.getElementById('word-length');
+            const muteBtn = document.getElementById('mute-btn');
+            const muteIcon = document.getElementById('mute-icon');
+            const unmuteIcon = document.getElementById('unmute-icon');
+            const pauseBtn = document.getElementById('pause-btn');
+            const pauseIcon = document.getElementById('pause-icon');
+            const playIcon = document.getElementById('play-icon');
+            const pauseOverlay = document.getElementById('pause-overlay');
+            const nextWordBtn = document.getElementById('next-word-btn');
+            const musicBtn = document.getElementById('music-btn');
+            const musicOnIcon = document.getElementById('music-on-icon');
+            const musicOffIcon = document.getElementById('music-off-icon');
+            const backgroundMusic = document.getElementById('background-music');
+            const volumeDownBtn = document.getElementById('volume-down-btn');
+            const volumeUpBtn = document.getElementById('volume-up-btn');
+
+            // --- Game Configuration ---
+            const WORD_TIME_LIMIT = 15; // seconds
+            const WORDS = [
+                "beautiful", "computer", "dragon", "elephant", "guitar", "holiday", "island", "jungle",
+                "kitchen", "library", "mountain", "notebook", "pencil", "question", "rainbow", "science", 
+                "together", "umbrella", "vacation", "wonderful", "xylophone", "yesterday", "amazing", "believe", 
+                "challenge", "discover", "fantastic", "generous", "history", "imagine", "journey", "knowledge", 
+                "language", "neighbor", "opportunity", "popular", "quality", "remember", "success", "technology", 
+                "universe", "victory", "weather", "celebrate", "different", "education", "favorite", "government", "important"
+            ].filter(word => word.length >= 7); // Filter for words with 7 or more letters
+
+            // --- Game State ---
+            let currentWord = '';
+            let score = 0;
+            let timer;
+            let timeLeft = WORD_TIME_LIMIT;
+            let typingStartTime;
+            let usedWords = new Set();
+            let isMuted = false;
+            let isPaused = false;
+            let isMusicOn = false;
+            let musicLoop;
+            let musicVolume = 0.5; // Start volume at 50%
+
+            // --- Sound Effects (Tone.js) ---
+            const synth = new Tone.Synth().toDestination();
+            const tickSynth = new Tone.MembraneSynth().toDestination();
+            tickSynth.volume.value = -20;
+
+            const playCorrectSound = () => {
+                if (isMuted) return;
+                synth.triggerAttackRelease("C5", "8n", Tone.now());
+                synth.triggerAttackRelease("E5", "8n", Tone.now() + 0.1);
+                synth.triggerAttackRelease("G5", "8n", Tone.now() + 0.2);
+            };
+
+            const playIncorrectSound = () => {
+                if (isMuted) return;
+                synth.triggerAttackRelease("A2", "8n");
+            };
+
+            const playTickSound = () => {
+                if (isMuted) return;
+                tickSynth.triggerAttackRelease("C2", "8n");
+            };
+
+            // --- Set MP3 Source ---
+            // IMPORTANT: Replace this placeholder with the actual URL of your MP3 file.
+            backgroundMusic.src = "https://fi.zophar.net/soundfiles/gameboy-gbs/tetris/02%20A-Type%20Music%20%28version%201.1%29.mp3"; 
+            backgroundMusic.volume = musicVolume;
+            
+            // --- Speech Synthesis ---
+            const speak = (text) => {
+                if (isMuted || typeof SpeechSynthesisUtterance === 'undefined') {
+                    if (isMuted) return;
+                    console.warn("Speech Synthesis not supported in this browser.");
+                    return;
+                }
+                speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                speechSynthesis.speak(utterance);
+            };
+            
+            // --- Game Logic ---
+            const getNewWord = () => {
+                if(usedWords.size === WORDS.length) {
+                    usedWords.clear();
+                }
+                let availableWords = WORDS.filter(word => !usedWords.has(word));
+                if(availableWords.length === 0) {
+                    availableWords = WORDS;
+                }
+                const randomIndex = Math.floor(Math.random() * availableWords.length);
+                const newWord = availableWords[randomIndex];
+                usedWords.add(newWord);
+                return newWord;
+            };
+
+            const startTimer = () => {
+                clearInterval(timer);
+                timeLeft = WORD_TIME_LIMIT;
+                timerEl.textContent = timeLeft;
+                timerEl.classList.remove('status-incorrect');
+
+                timer = setInterval(() => {
+                    if (isPaused) return;
+                    timeLeft--;
+                    timerEl.textContent = timeLeft;
+                    if (timeLeft > 0) {
+                        playTickSound();
+                    }
+                    if (timeLeft <= 5) {
+                        timerEl.classList.add('status-incorrect');
+                    }
+                    if (timeLeft <= 0) {
+                        clearInterval(timer);
+                        handleIncorrectAnswer("Time's up!");
+                    }
+                }, 1000);
+            };
+            
+            const nextWord = () => {
+                spellInput.value = '';
+                spellInput.disabled = false;
+                spellInput.focus();
+                feedbackEl.textContent = '\u00A0';
+                feedbackEl.classList.remove('status-correct', 'status-incorrect');
+                nextWordBtn.classList.add('hidden');
+                
+                currentWord = getNewWord();
+                wordLengthEl.textContent = `${currentWord.length} letters`;
+                typingStartTime = null; 
+                
+                setTimeout(() => {
+                    speak(currentWord);
+                    startTimer();
+                }, 1000); // Increased delay to 1 second
+            };
+
+            const calculateWPM = (word) => {
+                const endTime = performance.now();
+                const durationSeconds = (endTime - typingStartTime) / 1000;
+                if (durationSeconds === 0) return 0;
+                const durationMinutes = durationSeconds / 60;
+                const wpm = Math.round((word.length / 5) / durationMinutes);
+                return wpm;
+            };
+
+            const handleCorrectAnswer = () => {
+                clearInterval(timer);
+                playCorrectSound();
+                score++;
+                scoreEl.textContent = score;
+
+                if (typingStartTime) {
+                    wpmEl.textContent = calculateWPM(currentWord);
+                }
+
+                feedbackEl.textContent = 'Correct!';
+                feedbackEl.classList.add('status-correct');
+                spellInput.disabled = true;
+                nextWordBtn.classList.remove('hidden');
+                nextWordBtn.focus();
+            };
+
+            const handleIncorrectAnswer = (message = 'Try again!') => {
+                clearInterval(timer);
+                playIncorrectSound();
+                
+                feedbackEl.innerHTML = `Not quite! The word was: <strong class="text-yellow-400">${currentWord}</strong>`;
+                feedbackEl.classList.add('status-incorrect');
+                spellInput.disabled = true;
+                nextWordBtn.classList.remove('hidden');
+                nextWordBtn.focus();
+            };
+
+            const checkAnswer = () => {
+                const userAnswer = spellInput.value.trim().toLowerCase();
+                if (userAnswer === currentWord) {
+                    handleCorrectAnswer();
+                } else {
+                    handleIncorrectAnswer();
+                }
+            };
+            
+            const startGame = () => {
+                score = 0;
+                wpmEl.textContent = 0;
+                scoreEl.textContent = 0;
+                usedWords.clear();
+                isPaused = false;
+                pauseIcon.classList.remove('hidden');
+                playIcon.classList.add('hidden');
+                pauseOverlay.classList.add('hidden');
+                
+                startScreen.classList.add('hidden');
+                endScreen.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+
+                nextWord();
+            };
+
+            // --- Event Listeners ---
+            startGameBtn.addEventListener('click', () => {
+                Tone.start(); 
+                startGame();
+            });
+
+            playAgainBtn.addEventListener('click', startGame);
+
+            speakWordBtn.addEventListener('click', () => {
+                if (currentWord) speak(currentWord);
+            });
+
+            spellInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && spellInput.value.trim() !== '') checkAnswer();
+            });
+
+            spellInput.addEventListener('input', () => {
+                if (!typingStartTime) typingStartTime = performance.now();
+            });
+
+            muteBtn.addEventListener('click', () => {
+                isMuted = !isMuted;
+                muteIcon.classList.toggle('hidden', !isMuted);
+                unmuteIcon.classList.toggle('hidden', isMuted);
+                backgroundMusic.muted = isMuted; // Mute/unmute the MP3 player
+                if(isMuted) speechSynthesis.cancel();
+            });
+            
+            musicBtn.addEventListener('click', () => {
+                isMusicOn = !isMusicOn;
+                musicOnIcon.classList.toggle('hidden', !isMusicOn);
+                musicOffIcon.classList.toggle('hidden', isMusicOn);
+
+                if (isMusicOn && !isPaused) {
+                    backgroundMusic.play().catch(e => console.error("Audio playback failed:", e));
+                } else {
+                    backgroundMusic.pause();
+                }
+            });
+
+            pauseBtn.addEventListener('click', () => {
+                isPaused = !isPaused;
+                pauseIcon.classList.toggle('hidden', isPaused);
+                playIcon.classList.toggle('hidden', !isPaused);
+                pauseOverlay.classList.toggle('hidden', !isPaused);
+
+                if (isPaused) {
+                    spellInput.disabled = true;
+                    if(isMusicOn) backgroundMusic.pause();
+                } else {
+                    if (feedbackEl.textContent.trim() === '') {
+                        spellInput.disabled = false;
+                        spellInput.focus();
+                    }
+                    if(isMusicOn) backgroundMusic.play().catch(e => console.error("Audio playback failed:", e));
+                }
+            });
+
+            nextWordBtn.addEventListener('click', nextWord);
+
+            volumeUpBtn.addEventListener('click', () => {
+                if (musicVolume < 1.0) {
+                    musicVolume = Math.min(1.0, musicVolume + 0.1);
+                    backgroundMusic.volume = musicVolume;
+                }
+            });
+
+            volumeDownBtn.addEventListener('click', () => {
+                if (musicVolume > 0.0) {
+                    musicVolume = Math.max(0.0, Math.round((musicVolume - 0.1) * 10) / 10);
+                    backgroundMusic.volume = musicVolume;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
