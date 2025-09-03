@@ -31,6 +31,13 @@
         .btn-secondary:hover {
             background-color: #2d3748;
         }
+        .btn-wild {
+            background-color: #e53e3e; /* Red */
+            transition: background-color 0.3s ease;
+        }
+        .btn-wild:hover {
+            background-color: #c53030;
+        }
         .input-field {
             background-color: #1a202c;
             border-color: #4a5568;
@@ -47,6 +54,22 @@
         .status-incorrect {
             color: #f56565; /* Red */
         }
+        .letter-box {
+            width: 3rem; /* 48px */
+            height: 4rem; /* 64px */
+            font-size: 2.25rem; /* 36px */
+            line-height: 2.5rem; /* 40px */
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .letter-correct {
+            border-color: #48bb78;
+            color: #48bb78;
+        }
+        .letter-incorrect {
+            border-color: #f56565;
+            color: #f56565;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -56,14 +79,18 @@
         <!-- Start Screen -->
         <div id="start-screen" class="text-center">
             <h1 class="text-5xl md:text-6xl font-bold text-yellow-400 mb-4">Nat's Spelling Showcase</h1>
-            <p class="text-xl text-slate-300 mb-8">Ready to show off your spelling skills?</p>
-            <button id="start-game-btn" class="btn-primary text-white font-bold py-3 px-8 rounded-full text-2xl shadow-lg">Start Game</button>
+            <p class="text-xl text-slate-300 mb-8">Select your difficulty!</p>
+            <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                 <button id="basic-difficulty-btn" class="btn-primary text-white font-bold py-3 px-8 rounded-full text-2xl shadow-lg w-full sm:w-auto">Basic</button>
+                 <button id="wild-difficulty-btn" class="btn-wild text-white font-bold py-3 px-8 rounded-full text-2xl shadow-lg w-full sm:w-auto">Bruh this is wild</button>
+            </div>
         </div>
 
         <!-- Game Screen -->
         <div id="game-screen" class="hidden">
             <div class="game-card rounded-2xl p-6 md:p-8 shadow-2xl relative">
-                <h1 class="text-3xl font-bold text-center text-yellow-400 mb-6">Nat's Spelling Showcase</h1>
+                <h1 class="text-3xl font-bold text-center text-yellow-400 mb-2">Nat's Spelling Showcase</h1>
+                <div id="difficulty-display" class="text-center text-slate-400 mb-4"></div>
                 <!-- Top HUD -->
                 <div class="flex justify-between items-center mb-6">
                     <div class="flex items-center space-x-4">
@@ -105,7 +132,9 @@
                 
                 <!-- Input Area -->
                 <div class="relative">
-                    <input type="text" id="spell-input" class="input-field w-full text-3xl text-center p-4 rounded-lg" placeholder="Type the word..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    <div id="letter-container" class="flex justify-center items-center gap-2 flex-wrap">
+                        <!-- Letter boxes will be dynamically inserted here -->
+                    </div>
                     <div id="word-length" class="absolute top-full right-0 text-sm text-slate-400 mt-2"></div>
                 </div>
                 
@@ -139,16 +168,18 @@
             const startScreen = document.getElementById('start-screen');
             const gameScreen = document.getElementById('game-screen');
             const endScreen = document.getElementById('end-screen');
-            const startGameBtn = document.getElementById('start-game-btn');
+            const basicDifficultyBtn = document.getElementById('basic-difficulty-btn');
+            const wildDifficultyBtn = document.getElementById('wild-difficulty-btn');
             const playAgainBtn = document.getElementById('play-again-btn');
             const speakWordBtn = document.getElementById('speak-word-btn');
-            const spellInput = document.getElementById('spell-input');
+            const letterContainer = document.getElementById('letter-container');
             const scoreEl = document.getElementById('score');
             const wpmEl = document.getElementById('wpm');
             const timerEl = document.getElementById('timer');
             const feedbackEl = document.getElementById('feedback');
             const finalScoreEl = document.getElementById('final-score');
             const wordLengthEl = document.getElementById('word-length');
+            const difficultyDisplay = document.getElementById('difficulty-display');
             const muteBtn = document.getElementById('mute-btn');
             const muteIcon = document.getElementById('mute-icon');
             const unmuteIcon = document.getElementById('unmute-icon');
@@ -166,14 +197,26 @@
 
             // --- Game Configuration ---
             const WORD_TIME_LIMIT = 15; // seconds
-            const WORDS = [
+            const ALL_WORDS = [
+                // Basic Words (7-14 letters)
                 "beautiful", "computer", "dragon", "elephant", "guitar", "holiday", "island", "jungle",
                 "kitchen", "library", "mountain", "notebook", "pencil", "question", "rainbow", "science", 
                 "together", "umbrella", "vacation", "wonderful", "xylophone", "yesterday", "amazing", "believe", 
                 "challenge", "discover", "fantastic", "generous", "history", "imagine", "journey", "knowledge", 
                 "language", "neighbor", "opportunity", "popular", "quality", "remember", "success", "technology", 
-                "universe", "victory", "weather", "celebrate", "different", "education", "favorite", "government", "important"
-            ].filter(word => word.length >= 7); // Filter for words with 7 or more letters
+                "universe", "victory", "weather", "celebrate", "different", "education", "favorite", "government", "important",
+                // Wild Words (15+ letters)
+                "characteristically", "incomprehensibility", "interdisciplinary",
+                "microspectrophotometry", "psychophysiological", "deinstitutionalization",
+                "counterrevolutionaries", "compartmentalization", "incontrovertibility",
+                "disproportionateness", "environmentalists", "extraterritoriality",
+                "inconsequentialness", "overenthusiastically", "responsibilities", 
+                "telecommunications", "internationalization", "misunderstanding"
+            ];
+
+            const BASIC_WORDS = ALL_WORDS.filter(w => w.length >= 7 && w.length < 15);
+            const WILD_WORDS = ALL_WORDS.filter(w => w.length >= 15);
+            let WORDS = [];
 
             // --- Game State ---
             let currentWord = '';
@@ -182,10 +225,11 @@
             let timeLeft = WORD_TIME_LIMIT;
             let typingStartTime;
             let usedWords = new Set();
+            let currentInput = '';
+            let isInputActive = false;
             let isMuted = false;
             let isPaused = false;
             let isMusicOn = false;
-            let musicLoop;
             let musicVolume = 0.5; // Start volume at 50%
 
             // --- Sound Effects (Tone.js) ---
@@ -211,7 +255,6 @@
             };
 
             // --- Set MP3 Source ---
-            // IMPORTANT: Replace this placeholder with the actual URL of your MP3 file.
             backgroundMusic.src = "https://fi.zophar.net/soundfiles/gameboy-gbs/tetris/02%20A-Type%20Music%20%28version%201.1%29.mp3"; 
             backgroundMusic.volume = musicVolume;
             
@@ -267,9 +310,9 @@
             };
             
             const nextWord = () => {
-                spellInput.value = '';
-                spellInput.disabled = false;
-                spellInput.focus();
+                currentInput = '';
+                letterContainer.innerHTML = '';
+                isInputActive = true;
                 feedbackEl.textContent = '\u00A0';
                 feedbackEl.classList.remove('status-correct', 'status-incorrect');
                 nextWordBtn.classList.add('hidden');
@@ -277,6 +320,13 @@
                 currentWord = getNewWord();
                 wordLengthEl.textContent = `${currentWord.length} letters`;
                 typingStartTime = null; 
+
+                // Create letter boxes
+                for (let i = 0; i < currentWord.length; i++) {
+                    const letterBox = document.createElement('div');
+                    letterBox.className = 'input-field letter-box flex items-center justify-center rounded-lg';
+                    letterContainer.appendChild(letterBox);
+                }
                 
                 setTimeout(() => {
                     speak(currentWord);
@@ -298,6 +348,7 @@
                 playCorrectSound();
                 score++;
                 scoreEl.textContent = score;
+                isInputActive = false;
 
                 if (typingStartTime) {
                     wpmEl.textContent = calculateWPM(currentWord);
@@ -305,7 +356,6 @@
 
                 feedbackEl.textContent = 'Correct!';
                 feedbackEl.classList.add('status-correct');
-                spellInput.disabled = true;
                 nextWordBtn.classList.remove('hidden');
                 nextWordBtn.focus();
             };
@@ -313,17 +363,26 @@
             const handleIncorrectAnswer = (message = 'Try again!') => {
                 clearInterval(timer);
                 playIncorrectSound();
+                isInputActive = false;
                 
-                feedbackEl.innerHTML = `Not quite! The word was: <strong class="text-yellow-400">${currentWord}</strong>`;
+                feedbackEl.innerHTML = `Not quite! The word was: <strong class="text-yellow-400">${currentWord.toUpperCase()}</strong>`;
                 feedbackEl.classList.add('status-incorrect');
-                spellInput.disabled = true;
+                
+                // Show the correct spelling in the letter boxes
+                const letterBoxes = letterContainer.childNodes;
+                for(let i = 0; i < currentWord.length; i++) {
+                    letterBoxes[i].textContent = currentWord[i];
+                    if (currentInput[i] !== currentWord[i]) {
+                         letterBoxes[i].classList.add('letter-incorrect');
+                    }
+                }
+
                 nextWordBtn.classList.remove('hidden');
                 nextWordBtn.focus();
             };
 
             const checkAnswer = () => {
-                const userAnswer = spellInput.value.trim().toLowerCase();
-                if (userAnswer === currentWord) {
+                if (currentInput === currentWord) {
                     handleCorrectAnswer();
                 } else {
                     handleIncorrectAnswer();
@@ -348,24 +407,66 @@
             };
 
             // --- Event Listeners ---
-            startGameBtn.addEventListener('click', () => {
+            basicDifficultyBtn.addEventListener('click', () => {
+                WORDS = BASIC_WORDS;
+                difficultyDisplay.textContent = 'Difficulty: Basic';
+                Tone.start(); 
+                startGame();
+            });
+            
+            wildDifficultyBtn.addEventListener('click', () => {
+                WORDS = WILD_WORDS;
+                difficultyDisplay.textContent = 'Difficulty: Bruh this is wild';
                 Tone.start(); 
                 startGame();
             });
 
-            playAgainBtn.addEventListener('click', startGame);
+            playAgainBtn.addEventListener('click', () => {
+                endScreen.classList.add('hidden');
+                startScreen.classList.remove('hidden');
+            });
 
             speakWordBtn.addEventListener('click', () => {
                 if (currentWord) speak(currentWord);
             });
 
-            spellInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && spellInput.value.trim() !== '') checkAnswer();
-            });
+            const handleKeyPress = (e) => {
+                if (!isInputActive || isPaused) return;
 
-            spellInput.addEventListener('input', () => {
-                if (!typingStartTime) typingStartTime = performance.now();
-            });
+                const key = e.key;
+
+                // Handle letter input
+                if (key.match(/^[a-z]$/i) && currentInput.length < currentWord.length) {
+                    if (!typingStartTime) typingStartTime = performance.now();
+                    
+                    const letterBoxes = letterContainer.childNodes;
+                    const box = letterBoxes[currentInput.length];
+                    box.textContent = key;
+                    
+                    if (key.toLowerCase() === currentWord[currentInput.length]) {
+                        box.classList.add('letter-correct');
+                        box.classList.remove('letter-incorrect');
+                    } else {
+                        box.classList.add('letter-incorrect');
+                        box.classList.remove('letter-correct');
+                    }
+                    currentInput += key.toLowerCase();
+                }
+                // Handle backspace
+                else if (key === 'Backspace' && currentInput.length > 0) {
+                    currentInput = currentInput.slice(0, -1);
+                    const letterBoxes = letterContainer.childNodes;
+                    const box = letterBoxes[currentInput.length];
+                    box.textContent = '';
+                    box.classList.remove('letter-correct', 'letter-incorrect');
+                }
+                // Handle submit
+                else if (key === 'Enter' && currentInput.length === currentWord.length) {
+                    checkAnswer();
+                }
+            };
+
+            document.addEventListener('keydown', handleKeyPress);
 
             muteBtn.addEventListener('click', () => {
                 isMuted = !isMuted;
@@ -378,7 +479,7 @@
             musicBtn.addEventListener('click', () => {
                 isMusicOn = !isMusicOn;
                 musicOnIcon.classList.toggle('hidden', !isMusicOn);
-                musicOffIcon.classList.toggle('hidden', isMusicOn);
+                musicOffIcon.classList.toggle('hidden', isMuted);
 
                 if (isMusicOn && !isPaused) {
                     backgroundMusic.play().catch(e => console.error("Audio playback failed:", e));
@@ -394,12 +495,11 @@
                 pauseOverlay.classList.toggle('hidden', !isPaused);
 
                 if (isPaused) {
-                    spellInput.disabled = true;
+                    isInputActive = false;
                     if(isMusicOn) backgroundMusic.pause();
                 } else {
-                    if (feedbackEl.textContent.trim() === '') {
-                        spellInput.disabled = false;
-                        spellInput.focus();
+                    if (feedbackEl.textContent.trim() === '' || feedbackEl.classList.contains('status-correct')) {
+                         isInputActive = true;
                     }
                     if(isMusicOn) backgroundMusic.play().catch(e => console.error("Audio playback failed:", e));
                 }
@@ -424,4 +524,5 @@
     </script>
 </body>
 </html>
+
 
