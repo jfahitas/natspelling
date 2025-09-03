@@ -70,6 +70,11 @@
             border-color: #f56565;
             color: #f56565;
         }
+        .wpm-flash {
+            transform: scale(1.5);
+            color: #f6e05e; /* Bright yellow */
+            transition: all 0.2s ease-in-out;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -348,7 +353,7 @@
                 feedbackEl.classList.remove('status-correct', 'status-incorrect');
                 nextWordBtn.classList.add('hidden');
                 skipWordBtn.classList.add('hidden');
-                wpmEl.textContent = 0;
+                // wpmEl.textContent = 0; // <-- This was the bug. Removing it keeps the last WPM.
                 
                 currentWord = getNewWord();
                 wordLengthEl.textContent = `${currentWord.length} letters`;
@@ -379,7 +384,13 @@
                 isInputActive = false;
 
                 if (typingStartTime && performance.now() > typingStartTime) {
-                    wpmEl.textContent = calculateWPM(currentWord);
+                    const currentWPM = calculateWPM(currentWord);
+                    wpmEl.textContent = currentWPM;
+                    // Add flash effect
+                    wpmEl.parentElement.classList.add('wpm-flash');
+                    setTimeout(() => {
+                        wpmEl.parentElement.classList.remove('wpm-flash');
+                    }, 1500); // Remove flash after 1.5 seconds
                 }
 
                 feedbackEl.textContent = 'Correct!';
@@ -478,6 +489,7 @@
                     if (!isRoundStarted) {
                         isRoundStarted = true;
                         isInputActive = true;
+                        typingStartTime = performance.now(); // Start WPM timer when the round starts
                         // A minimal delay to ensure the event loop is clear before speaking.
                         setTimeout(() => {
                            speak(currentWord);
@@ -498,7 +510,7 @@
 
                 // Handle letter input
                 if (key.match(/^[a-z]$/i) && currentInput.length < currentWord.length) {
-                    if (!typingStartTime) typingStartTime = performance.now();
+                    // The start time is now set when the round begins
                     
                     const letterBoxes = letterContainer.children; 
                     const box = letterBoxes[currentInput.length];
