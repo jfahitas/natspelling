@@ -130,6 +130,9 @@
                     <div id="feedback" class="mt-4 text-2xl font-bold h-8">&nbsp;</div>
                 </div>
                 
+                <!-- Correct Word Display -->
+                <div id="correct-word-display" class="hidden text-center text-4xl font-bold mb-4 tracking-widest"></div>
+
                 <!-- Input Area -->
                 <div class="relative">
                     <div id="letter-container" class="flex justify-center items-center gap-2 flex-wrap">
@@ -173,6 +176,7 @@
             const playAgainBtn = document.getElementById('play-again-btn');
             const speakWordBtn = document.getElementById('speak-word-btn');
             const letterContainer = document.getElementById('letter-container');
+            const correctWordDisplay = document.getElementById('correct-word-display');
             const scoreEl = document.getElementById('score');
             const wpmEl = document.getElementById('wpm');
             const timerEl = document.getElementById('timer');
@@ -312,6 +316,7 @@
             const nextWord = () => {
                 currentInput = '';
                 letterContainer.innerHTML = '';
+                correctWordDisplay.classList.add('hidden');
                 isInputActive = true;
                 feedbackEl.textContent = '\u00A0';
                 feedbackEl.classList.remove('status-correct', 'status-incorrect');
@@ -356,6 +361,11 @@
 
                 feedbackEl.textContent = 'Correct!';
                 feedbackEl.classList.add('status-correct');
+
+                correctWordDisplay.textContent = currentWord.toUpperCase();
+                correctWordDisplay.classList.remove('hidden', 'status-incorrect');
+                correctWordDisplay.classList.add('status-correct');
+                
                 nextWordBtn.classList.remove('hidden');
                 nextWordBtn.focus();
             };
@@ -365,13 +375,17 @@
                 playIncorrectSound();
                 isInputActive = false;
                 
-                feedbackEl.innerHTML = `Not quite! The word was: <strong class="text-yellow-400">${currentWord.toUpperCase()}</strong>`;
+                feedbackEl.textContent = message === "Time's up!" ? "Time's up!" : 'Not quite!';
                 feedbackEl.classList.add('status-incorrect');
                 
+                correctWordDisplay.textContent = currentWord.toUpperCase();
+                correctWordDisplay.classList.remove('hidden', 'status-correct');
+                correctWordDisplay.classList.add('status-incorrect');
+
                 // Show the correct spelling in the letter boxes
                 const letterBoxes = letterContainer.childNodes;
                 for(let i = 0; i < currentWord.length; i++) {
-                    letterBoxes[i].textContent = currentWord[i];
+                    letterBoxes[i].textContent = currentWord[i].toUpperCase();
                     if (currentInput[i] !== currentWord[i]) {
                          letterBoxes[i].classList.add('letter-incorrect');
                     }
@@ -479,7 +493,7 @@
             musicBtn.addEventListener('click', () => {
                 isMusicOn = !isMusicOn;
                 musicOnIcon.classList.toggle('hidden', !isMusicOn);
-                musicOffIcon.classList.toggle('hidden', isMuted);
+                musicOffIcon.classList.toggle('hidden', isMusicOn);
 
                 if (isMusicOn && !isPaused) {
                     backgroundMusic.play().catch(e => console.error("Audio playback failed:", e));
@@ -524,5 +538,4 @@
     </script>
 </body>
 </html>
-
 
