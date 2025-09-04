@@ -182,8 +182,9 @@
         </div>
     </div>
     
-    <!-- Audio element for MP3 background music -->
+    <!-- Audio elements -->
     <audio id="background-music" loop></audio>
+    <audio id="incorrect-sound"></audio>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -222,6 +223,7 @@
             const volumeUpBtn = document.getElementById('volume-up-btn');
             const definitionContainer = document.getElementById('definition-container');
             const definitionText = document.getElementById('definition-text');
+            const incorrectSound = document.getElementById('incorrect-sound');
 
             // --- Game Configuration ---
             const WORD_TIME_LIMIT = 15; // seconds
@@ -304,7 +306,7 @@
             let isMusicOn = false;
             let musicVolume = 0.5;
 
-            // --- Sound Effects (Tone.js) ---
+            // --- Sound Effects (Tone.js & MP3) ---
             const synth = new Tone.Synth().toDestination();
 
             const playCorrectSound = () => {
@@ -313,16 +315,29 @@
                 synth.triggerAttackRelease("E5", "8n", Tone.now() + 0.1);
                 synth.triggerAttackRelease("G5", "8n", Tone.now() + 0.2);
             };
-
-            const playIncorrectSound = () => {
-                if (isMuted) return;
-                synth.triggerAttackRelease("A2", "8n");
-            };
-
-            // --- Set MP3 Source ---
+            
+            // --- Set MP3 Sources ---
             backgroundMusic.src = "https://fi.zophar.net/soundfiles/gameboy-gbs/tetris/02%20A-Type%20Music%20%28version%201.1%29.mp3"; 
             backgroundMusic.volume = musicVolume;
             
+            const incorrectSoundUrls = [
+                "https://www.myinstants.com/media/sounds/taco-bell-bong-sfx.mp3",
+                "https://www.myinstants.com/media/sounds/this-guy-stinks-meme.mp3",
+                "https://www.myinstants.com/media/sounds/emotional-damage-meme.mp3",
+                "https://www.myinstants.com/media/sounds/sad-trombone.mp3",
+                "https://www.myinstants.com/media/sounds/rick-rolled-sound-effect.mp3",
+                "https://www.myinstants.com/media/sounds/sad-spongebob-song.mp3",
+                "https://www.myinstants.com/media/sounds/spongebob-disgusting.mp3"
+            ];
+
+            const playIncorrectSound = () => {
+                if (isMuted) return;
+                const randomIndex = Math.floor(Math.random() * incorrectSoundUrls.length);
+                incorrectSound.src = incorrectSoundUrls[randomIndex];
+                incorrectSound.currentTime = 0; // Rewind to the start
+                incorrectSound.play().catch(e => console.error("Incorrect sound playback failed:", e));
+            };
+
             // --- Speech Synthesis ---
             const speak = (text) => {
                 if (isMuted || typeof SpeechSynthesisUtterance === 'undefined') {
@@ -548,12 +563,12 @@
                         definitionContainer.classList.remove('hidden');
 
                         setTimeout(() => {
-                           speak(currentWord);
+                           speak("Can you spell... " + currentWord);
                            startTimer();
                            skipWordBtn.classList.remove('hidden');
                         }, 100);
                     } else {
-                        speak(currentWord);
+                        speak("Can you spell... " + currentWord);
                     }
                 }
             });
