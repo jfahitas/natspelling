@@ -38,6 +38,17 @@
         .btn-wild:hover {
             background-color: #c53030;
         }
+        .btn-sybau {
+            background-color: #2d3748; /* Dark Gray/Black */
+            border: 2px solid #9f7aea; /* Purple border */
+            color: #d6bcfa; /* Light purple text */
+            transition: all 0.3s ease;
+        }
+        .btn-sybau:hover {
+            background-color: #4a5568;
+            color: #ffffff;
+            border-color: #ffffff;
+        }
         .input-field {
             background-color: #1a202c;
             border-color: #4a5568;
@@ -55,31 +66,28 @@
             color: #f56565; /* Red */
         }
         .letter-box {
-            width: 3rem; /* 48px */
-            height: 4rem; /* 64px */
-            font-size: 2.25rem; /* 36px */
-            line-height: 2.5rem; /* 40px */
+            width: 2.5rem; /* 40px */
+            height: 3.5rem; /* 56px */
+            font-size: 1.875rem; /* 30px */
+            line-height: 2.25rem; /* 36px */
             font-weight: 700;
             text-transform: uppercase;
-        }
-        .letter-correct {
-            border-color: #48bb78;
-            color: #48bb78;
-        }
-        .letter-incorrect {
-            border-color: #f56565;
-            color: #f56565;
         }
         .wpm-flash {
             transform: scale(1.5);
             color: #f6e05e; /* Bright yellow */
             transition: all 0.2s ease-in-out;
         }
+        #definition-container {
+            background-color: #1a202c;
+            border-left: 4px solid #4299e1;
+            color: #cbd5e0;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
-    <div id="game-container" class="w-full max-w-2xl mx-auto">
+    <div id="game-container" class="w-full max-w-4xl mx-auto">
 
         <!-- Start Screen -->
         <div id="start-screen" class="text-center">
@@ -88,6 +96,7 @@
             <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
                  <button id="basic-difficulty-btn" class="btn-primary text-white font-bold py-3 px-8 rounded-full text-2xl shadow-lg w-full sm:w-auto">Basic</button>
                  <button id="wild-difficulty-btn" class="btn-wild text-white font-bold py-3 px-8 rounded-full text-2xl shadow-lg w-full sm:w-auto">Bruh this is wild</button>
+                 <button id="sybau-difficulty-btn" class="btn-sybau font-bold py-3 px-8 rounded-full text-2xl shadow-lg w-full sm:w-auto">SYBAU</button>
             </div>
         </div>
 
@@ -126,7 +135,7 @@
                 </div>
 
                 <!-- Word Prompt Area -->
-                <div class="text-center my-8">
+                <div class="text-center my-6">
                      <p class="text-slate-400 mb-4">Click the button to hear the word</p>
                     <button id="speak-word-btn" class="btn-secondary text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg flex items-center justify-center mx-auto">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
@@ -135,12 +144,17 @@
                     <div id="feedback" class="mt-4 text-2xl font-bold h-8">&nbsp;</div>
                 </div>
                 
+                <!-- Definition Display -->
+                <div id="definition-container" class="hidden text-left p-4 rounded-lg mb-4 h-24 overflow-y-auto">
+                    <p id="definition-text" class="italic"></p>
+                </div>
+
                 <!-- Correct Word Display -->
                 <div id="correct-word-display" class="hidden text-center text-4xl font-bold mb-4 tracking-widest"></div>
 
                 <!-- Input Area -->
                 <div class="relative">
-                    <div id="letter-container" class="flex justify-center items-center gap-2 flex-wrap">
+                    <div id="letter-container" class="flex justify-center items-center gap-1 md:gap-2 flex-wrap">
                         <!-- Letter boxes will be dynamically inserted here -->
                     </div>
                     <div id="word-length" class="absolute top-full right-0 text-sm text-slate-400 mt-2"></div>
@@ -179,6 +193,7 @@
             const endScreen = document.getElementById('end-screen');
             const basicDifficultyBtn = document.getElementById('basic-difficulty-btn');
             const wildDifficultyBtn = document.getElementById('wild-difficulty-btn');
+            const sybauDifficultyBtn = document.getElementById('sybau-difficulty-btn');
             const playAgainBtn = document.getElementById('play-again-btn');
             const speakWordBtn = document.getElementById('speak-word-btn');
             const letterContainer = document.getElementById('letter-container');
@@ -205,10 +220,12 @@
             const backgroundMusic = document.getElementById('background-music');
             const volumeDownBtn = document.getElementById('volume-down-btn');
             const volumeUpBtn = document.getElementById('volume-up-btn');
+            const definitionContainer = document.getElementById('definition-container');
+            const definitionText = document.getElementById('definition-text');
 
             // --- Game Configuration ---
             const WORD_TIME_LIMIT = 15; // seconds
-            const ALL_WORDS = [
+            let ALL_WORDS = [
                 // Basic Words (7-14 letters)
                 "beautiful", "computer", "dragon", "elephant", "guitar", "holiday", "island", "jungle", "kitchen", "library", "mountain", "notebook",
                 "pencil", "question", "rainbow", "science", "together", "umbrella", "vacation", "wonderful", "xylophone", "yesterday", "amazing",
@@ -226,14 +243,11 @@
                 "participation", "permission", "presentation", "preservation", "pronunciation", "publication", "qualification", "realization",
                 "recommendation", "registration", "representation", "reputation", "reservation", "resignation", "resolution", "restoration",
                 "specification", "stimulation", "supervision", "transformation",
-                // Wild Words (15+ letters)
+                // Wild Words (15-29 letters)
                 "characteristically", "incomprehensibility", "interdisciplinary", "microspectrophotometry", "psychophysiological",
                 "deinstitutionalization", "counterrevolutionaries", "compartmentalization", "incontrovertibility", "disproportionateness",
                 "environmentalists", "extraterritoriality", "inconsequentialness", "overenthusiastically", "responsibilities",
-                "telecommunications", "internationalization", "misunderstanding", "antidisestablishmentarianism", "floccinaucinihilipilification",
-                "pseudopseudohypoparathyroidism", "supercalifragilisticexpialidocious", "incomprehensibilities", "spectrophotofluorometrically",
-                "psychoneuroendocrinological", "radioimmunoelectrophoresis", "immunoelectrophoretically", "otorhinolaryngological",
-                "thyroparathyroidectomized", "psychopharmacologically", "intellectualization", "uninterruptibleness", "multidimensionality",
+                "telecommunications", "internationalization", "misunderstanding", "intellectualization", "uninterruptibleness", "multidimensionality",
                 "individualistically", "institutionalization", "compartmentalizing", "conceptualization", "constitutionalize", "contextualization",
                 "conventionalizing", "decriminalization", "deindustrialization", "demilitarization", "democratization", "denationalization",
                 "departmentalizing", "differentiation", "diversification", "electrophysiological", "encephalographically", "gastrointestinal",
@@ -245,23 +259,38 @@
                 "multiprogramming", "neurotransmitter", "noncontradictory", "operationalization", "oversimplification", "parapsychological",
                 "photoconductivity", "photosensitivity", "polysaccharides", "professionalism", "proportionality", "psychoanalysis",
                 "psycholinguistics", "psychopathology", "psychophysiology", "psychotherapists", "rationalization", "redistribution",
-                "representation", "scientific-technical", "self-actualization", "self-determination", "self-realization", "semi-consciousness",
-                "socio-cultural", "socio-economic", "sociolinguistics", "standardization", "straightforwardness", "sub-categorization",
-                "subjectivization", "systematically", "telecommunication", "territorialization", "trans-continental", "traditionalistic",
-                "transcendentalism", "transdisciplinary", "unimaginatively", "universalization", "unprofessionally", "unsubstantiated",
-                "ventriloquism", "electroencephalogram", "counter-revolutionary", "decontextualization", "deinstitutionalize",
-                "disenfranchisement", "electro-mechanically", "institutionalizing", "inter-communication", "multi-jurisdictional",
-                "neuro-anatomical", "neuro-endocrinology", "paleo-anthropology", "para-professional", "psycho-acoustics", "radio-astronomical",
-                "re-conceptualization", "socio-biological", "thrombo-embolic", "trans-oceanic", "un-ambiguously", "un-ceremoniously",
-                "un-constitutional", "un-questionably", "pneumonoultramicroscopicsilicovolcanoconiosis"
+                "representation", "selfdetermination", "selfrealization", "semiconsciousness", "sociocultural", "socioeconomic", "sociolinguistics", "standardization", "straightforwardness",
+                "subcategorization", "subjectivization", "systematically", "telecommunication", "territorialization", "transcendentalism", "transdisciplinary", "unimaginatively", "universalization", "unprofessionally", "unsubstantiated",
+                "ventriloquism", "electroencephalogram", "decontextualization", "deinstitutionalize",
+                "disenfranchisement", "electromechanically", "institutionalizing", "intercommunication", "multijurisdictional",
+                "neuroanatomical", "neuroendocrinology", "paleoanthropology", "paraprofessional", "psychoacoustics", "radioastronomical",
+                "reconceptualization", "sociobiological", "thromboembolic", "transoceanic", "unambiguously", "unceremoniously",
+                "unconstitutional", "unquestionably",
+                 // SYBAU Words (30+ letters, geographical, loanwords)
+                "antidisestablishmentarianism", "floccinaucinihilipilification", "honorificabilitudinitatibus",
+                "pseudopseudohypoparathyroidism", "supercalifragilisticexpialidocious", "incomprehensibilities", "spectrophotofluorometrically",
+                "psychoneuroendocrinological", "radioimmunoelectrophoresis", "immunoelectrophoretically", "otorhinolaryngological",
+                "thyroparathyroidectomized", "psychopharmacologically", "subdermatoglyphic",
+                "muckanaghederdauhaulia", // Irish Town
+                "gasselterboerveenschemond", // Dutch Town
+                "parangaricutirimicuaro", // Mexican Volcano Village
+                "llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch", // Welsh Town
+                "chargoggagoggmanchauggagoggchaubunagungamaugg", // Lake in USA
+                "pneumonoultramicroscopicsilicovolcanoconiosis"
             ];
+            
+            // Remove words with hyphens from all lists
+            ALL_WORDS = ALL_WORDS.filter(w => !w.includes('-'));
 
             const BASIC_WORDS = ALL_WORDS.filter(w => w.length >= 7 && w.length < 15);
-            const WILD_WORDS = ALL_WORDS.filter(w => w.length >= 15);
+            const WILD_WORDS = ALL_WORDS.filter(w => w.length >= 15 && w.length < 30);
+            const SYBAU_WORDS = ALL_WORDS.filter(w => w.length >= 30 || ["muckanaghederdauhaulia", "gasselterboerveenschemond", "parangaricutirimicuaro", "llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch", "chargoggagoggmanchauggagoggchaubunagungamaugg"].includes(w));
+
             let WORDS = [];
 
             // --- Game State ---
             let currentWord = '';
+            let currentDefinition = '';
             let score = 0;
             let timer;
             let timeLeft = WORD_TIME_LIMIT;
@@ -269,11 +298,11 @@
             let usedWords = new Set();
             let currentInput = '';
             let isInputActive = false;
-            let isRoundStarted = false; // New state to track if the timer/audio has started for the current word
+            let isRoundStarted = false;
             let isMuted = false;
             let isPaused = false;
             let isMusicOn = false;
-            let musicVolume = 0.5; // Start volume at 50%
+            let musicVolume = 0.5;
 
             // --- Sound Effects (Tone.js) ---
             const synth = new Tone.Synth().toDestination();
@@ -307,14 +336,45 @@
                 speechSynthesis.speak(utterance);
             };
             
+            // --- Definition API ---
+            const fetchDefinition = async (word) => {
+                currentDefinition = 'Loading definition...';
+                const geographicWords = [
+                    "muckanaghederdauhaulia",
+                    "gasselterboerveenschemond",
+                    "parangaricutirimicuaro",
+                    "llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch",
+                    "chargoggagoggmanchauggagoggchaubunagungamaugg"
+                ];
+
+                try {
+                    const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        currentDefinition = data[0]?.meanings[0]?.definitions[0]?.definition || 'No definition available for this word.';
+                    } else {
+                        if (geographicWords.includes(word.toLowerCase())) {
+                            currentDefinition = 'Geographic location.';
+                        } else {
+                            currentDefinition = 'No official definition could be found for this word.';
+                        }
+                    }
+                } catch (networkError) {
+                    // This will now only catch actual network errors.
+                    console.error("Definition fetch network error:", networkError);
+                    currentDefinition = 'Could not connect to the dictionary service.';
+                }
+            };
+            
             // --- Game Logic ---
             const getNewWord = () => {
-                if(usedWords.size === WORDS.length) {
-                    usedWords.clear();
+                 if (usedWords.size >= WORDS.length) {
+                    usedWords.clear(); // Minimize repeats, reset when all words used
                 }
                 let availableWords = WORDS.filter(word => !usedWords.has(word));
-                if(availableWords.length === 0) {
+                if (availableWords.length === 0) {
                     availableWords = WORDS;
+                    usedWords.clear();
                 }
                 const randomIndex = Math.floor(Math.random() * availableWords.length);
                 const newWord = availableWords[randomIndex];
@@ -347,15 +407,16 @@
                 currentInput = '';
                 letterContainer.innerHTML = '';
                 correctWordDisplay.classList.add('hidden');
-                isInputActive = false; // Input is disabled until player clicks "Listen"
-                isRoundStarted = false; // Reset for the new word
+                definitionContainer.classList.add('hidden');
+                isInputActive = false;
+                isRoundStarted = false;
                 feedbackEl.textContent = '\u00A0';
                 feedbackEl.classList.remove('status-correct', 'status-incorrect');
                 nextWordBtn.classList.add('hidden');
                 skipWordBtn.classList.add('hidden');
-                // wpmEl.textContent = 0; // <-- This was the bug. Removing it keeps the last WPM.
                 
                 currentWord = getNewWord();
+                fetchDefinition(currentWord); // Fetch definition for the new word
                 wordLengthEl.textContent = `${currentWord.length} letters`;
                 typingStartTime = null; 
 
@@ -386,11 +447,10 @@
                 if (typingStartTime && performance.now() > typingStartTime) {
                     const currentWPM = calculateWPM(currentWord);
                     wpmEl.textContent = currentWPM;
-                    // Add flash effect
                     wpmEl.parentElement.classList.add('wpm-flash');
                     setTimeout(() => {
                         wpmEl.parentElement.classList.remove('wpm-flash');
-                    }, 1500); // Remove flash after 1.5 seconds
+                    }, 1500);
                 }
 
                 feedbackEl.textContent = 'Correct!';
@@ -420,10 +480,7 @@
                 const letterBoxes = letterContainer.children; 
                 for(let i = 0; i < currentWord.length; i++) {
                     if (letterBoxes[i]) {
-                        // Display the correct letter
                         letterBoxes[i].textContent = currentWord[i].toUpperCase();
-                        
-                        // Explicitly set the class name to avoid conflicts
                         const baseClass = 'input-field letter-box flex items-center justify-center rounded-lg';
                         if (currentInput.length > i && currentInput[i] === currentWord[i]) {
                             letterBoxes[i].className = `${baseClass} letter-correct`;
@@ -432,7 +489,6 @@
                         }
                     }
                 }
-
                 nextWordBtn.classList.remove('hidden');
                 skipWordBtn.classList.add('hidden');
                 nextWordBtn.focus();
@@ -464,19 +520,16 @@
             };
 
             // --- Event Listeners ---
-            basicDifficultyBtn.addEventListener('click', () => {
-                WORDS = BASIC_WORDS;
-                difficultyDisplay.textContent = 'Difficulty: Basic';
+            const setupDifficulty = (difficulty, wordsList) => {
+                WORDS = wordsList;
+                difficultyDisplay.textContent = `Difficulty: ${difficulty}`;
                 Tone.start().catch(e => console.error("Tone.js failed to start:", e));
                 startGame();
-            });
-            
-            wildDifficultyBtn.addEventListener('click', () => {
-                WORDS = WILD_WORDS;
-                difficultyDisplay.textContent = 'Difficulty: Bruh this is wild';
-                Tone.start().catch(e => console.error("Tone.js failed to start:", e));
-                startGame();
-            });
+            };
+
+            basicDifficultyBtn.addEventListener('click', () => setupDifficulty('Basic', BASIC_WORDS));
+            wildDifficultyBtn.addEventListener('click', () => setupDifficulty('Bruh this is wild', WILD_WORDS));
+            sybauDifficultyBtn.addEventListener('click', () => setupDifficulty('SYBAU', SYBAU_WORDS));
 
             playAgainBtn.addEventListener('click', () => {
                 endScreen.classList.add('hidden');
@@ -485,19 +538,21 @@
 
             speakWordBtn.addEventListener('click', () => {
                 if (currentWord && !isPaused) {
-                    // If the round hasn't started, this click will start it.
                     if (!isRoundStarted) {
                         isRoundStarted = true;
                         isInputActive = true;
-                        typingStartTime = performance.now(); // Start WPM timer when the round starts
-                        // A minimal delay to ensure the event loop is clear before speaking.
+                        typingStartTime = performance.now();
+                        
+                        // Show definition when round starts
+                        definitionText.textContent = currentDefinition;
+                        definitionContainer.classList.remove('hidden');
+
                         setTimeout(() => {
                            speak(currentWord);
                            startTimer();
                            skipWordBtn.classList.remove('hidden');
                         }, 100);
                     } else {
-                        // If round is already active, just repeat the word.
                         speak(currentWord);
                     }
                 }
@@ -505,18 +560,13 @@
 
             const handleKeyPress = (e) => {
                 if (!isInputActive || isPaused) return;
-
                 const key = e.key;
 
-                // Handle letter input
                 if (key.match(/^[a-z]$/i) && currentInput.length < currentWord.length) {
-                    // The start time is now set when the round begins
-                    
                     const letterBoxes = letterContainer.children; 
                     const box = letterBoxes[currentInput.length];
                     if(box) {
                         box.textContent = key;
-                    
                         const baseClass = 'input-field letter-box flex items-center justify-center rounded-lg';
                         if (key.toLowerCase() === currentWord[currentInput.length]) {
                            box.className = `${baseClass} letter-correct`;
@@ -526,7 +576,6 @@
                     }
                     currentInput += key.toLowerCase();
                 }
-                // Handle backspace
                 else if (key === 'Backspace' && currentInput.length > 0) {
                     currentInput = currentInput.slice(0, -1);
                     const letterBoxes = letterContainer.children;
@@ -536,8 +585,8 @@
                         box.className = 'input-field letter-box flex items-center justify-center rounded-lg';
                     }
                 }
-                // Handle submit
-                else if (key === 'Enter' && currentInput.length === currentWord.length) {
+                else if (key === 'Enter' && currentInput.length > 0) {
+                     // Allow enter submit even if not full length, to check early
                     checkAnswer();
                 }
             };
@@ -579,11 +628,11 @@
                 if (isPaused) {
                     isInputActive = false;
                     if(isMusicOn) backgroundMusic.pause();
-                    clearInterval(timer); // Stop timer interval when paused
+                    clearInterval(timer);
                 } else {
                     if (isRoundStarted) {
                          isInputActive = true;
-                         startTimer(); // Resume timer
+                         startTimer();
                     }
                     if(isMusicOn) backgroundMusic.play().catch(e => console.error("Audio playback failed:", e));
                 }
@@ -608,4 +657,5 @@
     </script>
 </body>
 </html>
+
 
